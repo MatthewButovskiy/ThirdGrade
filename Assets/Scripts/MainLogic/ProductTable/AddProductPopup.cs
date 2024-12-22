@@ -1,34 +1,47 @@
 using System;
 using Michsky.MUIP;
-using UnityEngine;
-using TMPro;
 using Npgsql;
+using TMPro;
+using Unity.VisualScripting;
+using UnityEngine;
 
 public class AddProductPopup : MonoBehaviour
 {
     [SerializeField] private TMP_InputField nameField;
+    [SerializeField] private TMP_Text topName;
+    [SerializeField] private TMP_InputField manufacturerNameField;
+    [SerializeField] private TMP_InputField manufactureDateField;  // строка вида "2023-08-15"
     [SerializeField] private TMP_InputField priceField;
     [SerializeField] private TMP_InputField quantityField;
-    [SerializeField] private TMP_InputField descriptionField;
+    [SerializeField] private TMP_InputField categoryIdField;
+    [SerializeField] private TMP_InputField manufacturerIdField;
+    // warrantyField, discountIdField, parameterIdField, etc., если нужно
     [SerializeField] private NotificationManager errorNotification;
 
     private ProductsController parentController;
     private ProductItem editingProduct;
     private bool isEditMode = false;
 
-    public void Initialize(ProductsController controller, ProductItem productToEdit, NotificationManager errorNotif)
+    public void Initialize(ProductsController controller, ProductItem productToEdit, NotificationManager errorNotif, string topNameField)
     {
         parentController = controller;
         errorNotification = errorNotif;
-
+        topName.text = topNameField;
         if (productToEdit != null)
         {
             isEditMode = true;
             editingProduct = productToEdit;
-
             nameField.text = editingProduct.productName;
+            manufacturerNameField.text = editingProduct.manufacturerName;
+            if (editingProduct.manufactureDate.Equals(String.Empty))
+                manufactureDateField.text =
+                    "2023-08-15"; // или editingProduct.manufactureDate.ToString("yyyy-MM-dd") если храните
+            else
+                manufactureDateField.text = editingProduct.manufactureDate;
             priceField.text = editingProduct.productPrice.ToString("F2");
             quantityField.text = editingProduct.productQuantity.ToString();
+            categoryIdField.text = "1"; // при редактировании — выводим реальное значение
+            manufacturerIdField.text = "1";
         }
         else
         {
@@ -36,61 +49,103 @@ public class AddProductPopup : MonoBehaviour
             editingProduct = null;
             // поля пустые для добавления
             nameField.text = "";
+            manufacturerNameField.text = "";
+            manufactureDateField.text = "2023-08-15";
             priceField.text = "";
             quantityField.text = "";
-            descriptionField.text = "";
+            categoryIdField.text = "1";
+            manufacturerIdField.text = "1";
         }
     }
 
     public void OnConfirmClick()
     {
+        // Считываем
         string newName = nameField.text.Trim();
+        string newManufName = manufacturerNameField.text.Trim();
+        string dateStr = manufactureDateField.text.Trim();
         string priceStr = priceField.text.Trim();
-        string quantityStr = quantityField.text.Trim();
-        string desc = descriptionField.text.Trim();
+        string qtyStr = quantityField.text.Trim();
+        string catStr = categoryIdField.text.Trim();
+        string manufIDStr = manufacturerIdField.text.Trim();
 
+        // Валидируем
         if (string.IsNullOrEmpty(newName))
         {
             ShowError("Название товара не может быть пустым.");
             return;
         }
-
-        if (!decimal.TryParse(priceStr, out decimal newPrice) || newPrice < 0)
+        if (string.IsNullOrEmpty(newManufName))
         {
-            ShowError("Некорректная цена. Введите число больше или равно 0.");
+            ShowError("Название производителя не может быть пустым.");
+            return;
+        }
+        if (!System.DateTime.TryParse(dateStr, out var manDate))
+        {
+            ShowError("Некорректная дата изготовления. Используйте формат ГГГГ-ММ-ДД.");
+            return;
+        }
+        if (!decimal.TryParse(priceStr, out decimal newPrice) || newPrice <= 0)
+        {
+            ShowError("Некорректная цена. Должна быть число больше 0");
+            return;
+        }
+        if (!int.TryParse(qtyStr, out int newQty) || newQty <= 0)
+        {
+            ShowError("Некорректное количество. Целое число больше 0");
+            return;
+        }
+        if (!int.TryParse(catStr, out int newCatID) || newCatID <= 0)
+        {
+            ShowError("Неверная категория. Введите ID категории.");
+            return;
+        }
+        if (!int.TryParse(manufIDStr, out int newManufID) || newManufID <= 0)
+        {
+            ShowError("Неверный ID производителя.");
             return;
         }
 
-        if (!int.TryParse(quantityStr, out int newQuantity) || newQuantity < 0)
-        {
-            ShowError("Некорректное количество. Введите целое число больше или равно 0.");
-            return;
-        }
+        // Вычисляем total_amount = price * quantity
+        decimal totalAmt = newPrice * newQty;
 
         var conn = DatabaseManager.Instance.GetConnection();
-
         try
         {
             if (isEditMode)
             {
-                using (var cmd = new NpgsqlCommand("UPDATE techstore.products SET name=@n, price=@p, quantity=@q, description=@d WHERE id=@id", conn))
+                // UPDATE
+                using (var cmd = new NpgsqlCommand(@"UPDATE techstore.products 
+                  SET name=@n, manufacturer_name=@mn, manufacture_date=@md, price=@p, quantity=@q, total_amount=@ta, category_id=@cat, manufacturer_id=@mid 
+                  WHERE id=@id", conn))
                 {
                     cmd.Parameters.AddWithValue("n", newName);
+                    cmd.Parameters.AddWithValue("mn", newManufName);
+                    cmd.Parameters.AddWithValue("md", manDate);
                     cmd.Parameters.AddWithValue("p", newPrice);
-                    cmd.Parameters.AddWithValue("q", newQuantity);
-                    cmd.Parameters.AddWithValue("d", string.IsNullOrEmpty(desc) ? (object)DBNull.Value : desc);
+                    cmd.Parameters.AddWithValue("q", newQty);
+                    cmd.Parameters.AddWithValue("ta", totalAmt);
+                    cmd.Parameters.AddWithValue("cat", newCatID);
+                    cmd.Parameters.AddWithValue("mid", newManufID);
                     cmd.Parameters.AddWithValue("id", editingProduct.id);
                     cmd.ExecuteNonQuery();
                 }
             }
             else
             {
-                using (var cmd = new NpgsqlCommand("INSERT INTO techstore.products(name, price, quantity, description) VALUES(@n,@p,@q,@d)", conn))
+                // INSERT
+                using (var cmd = new NpgsqlCommand(@"INSERT INTO techstore.products
+                (name, manufacturer_name, manufacture_date, price, quantity, total_amount, category_id, manufacturer_id)
+                VALUES(@n,@mn,@md,@p,@q,@ta,@cat,@mid)", conn))
                 {
                     cmd.Parameters.AddWithValue("n", newName);
+                    cmd.Parameters.AddWithValue("mn", newManufName);
+                    cmd.Parameters.AddWithValue("md", manDate);
                     cmd.Parameters.AddWithValue("p", newPrice);
-                    cmd.Parameters.AddWithValue("q", newQuantity);
-                    cmd.Parameters.AddWithValue("d", string.IsNullOrEmpty(desc) ? (object)DBNull.Value : desc);
+                    cmd.Parameters.AddWithValue("q", newQty);
+                    cmd.Parameters.AddWithValue("ta", totalAmt);
+                    cmd.Parameters.AddWithValue("cat", newCatID);
+                    cmd.Parameters.AddWithValue("mid", newManufID);
                     cmd.ExecuteNonQuery();
                 }
             }

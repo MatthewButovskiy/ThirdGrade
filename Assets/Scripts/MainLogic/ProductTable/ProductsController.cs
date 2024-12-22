@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -13,25 +14,41 @@ public class ProductsController : MonoBehaviour
     [SerializeField] private ButtonManager addProductButton;
     [SerializeField] private GameObject addProductPopupPrefab;
     [SerializeField] private NotificationManager errorNotification;
+    [SerializeField] private DeleteConfirmation  deleteConfirmationPanel;
 
     private string role;
     private List<GameObject> currentItems = new List<GameObject>();
 
-    void Start()
+    public void StartDoinWork()
     {
         role = DatabaseManager.Instance.GetRole();
+
+        // Если роль - админ или менеджер, показываем кнопку "Добавить товар"
         bool canAdd = (role == "store_admin" || role == "store_manager");
         addProductButton.gameObject.SetActive(canAdd);
-
+        deleteConfirmationPanel.Initialize(this);
         LoadProducts();
     }
+    public void ShowDeleteConfirmation(ProductItem item)
+    {
+        deleteConfirmationPanel.ShowForItem(item);
+    }
 
+    public void ShowSuccess(string msg)
+    {
+        errorNotification.description = msg;
+        errorNotification.UpdateUI();
+        errorNotification.Open();
+    }
+
+    // Загружаем товары из БД и спавним префабы
     void LoadProducts()
     {
         ClearProducts();
 
         var conn = DatabaseManager.Instance.GetConnection();
-        using (var cmd = new NpgsqlCommand("SELECT id, name, price, quantity FROM techstore.products ORDER BY id", conn))
+        // Пример: если есть поле description, вы можете тоже его вытащить
+        using (var cmd = new NpgsqlCommand("SELECT id, name, price, quantity, manufacturer_name,  manufacture_date FROM techstore.products ORDER BY id", conn))
         using (var reader = cmd.ExecuteReader())
         {
             while (reader.Read())
@@ -40,20 +57,30 @@ public class ProductsController : MonoBehaviour
                 string name = reader.GetString(1);
                 decimal price = reader.GetDecimal(2);
                 int quantity = reader.GetInt32(3);
-                
+                string manufactorName = reader.GetString(4);
+                DateTime manufactorDate = reader.GetDateTime(5);
+                Debug.Log(manufactorDate + " ");
+                GameObject prefabToUse;
+                if (role == "store_admin" || role == "store_manager")
+                {
+                    prefabToUse = productItemAdminPrefab;
+                }
 
-                GameObject prefabToUse = (role == "store_admin" || role == "store_manager") ? productItemAdminPrefab : productItemReadOnlyPrefab;
+                else
+                {
+                    prefabToUse = productItemReadOnlyPrefab;
+                }
+
                 GameObject itemGO = Instantiate(prefabToUse, content);
                 currentItems.Add(itemGO);
 
                 var productItem = itemGO.GetComponent<ProductItem>();
-                Debug.Log(id + " ");
-                Debug.Log(name);
-                productItem.Init(id, name, price, quantity, this, errorNotification);
+                productItem.Init(id, name, manufactorName, price, quantity, manufactorDate.ToString("yyyy-MM-dd"),this, errorNotification);
             }
         }
     }
 
+    // Убираем старые объекты из контента, чтобы при обновлении/перезаходе не дублировалось
     void ClearProducts()
     {
         foreach (var go in currentItems)
@@ -63,23 +90,27 @@ public class ProductsController : MonoBehaviour
         currentItems.Clear();
     }
 
+    // Вызывается при нажатии на кнопку "Добавить товар"
     public void OnAddProductClick()
     {
-        OpenAddProductPopup(null);
+        OpenAddProductPopup(null, "Добавление товара");
     }
 
-    public void OpenAddProductPopup(ProductItem productToEdit)
+    // Открывает всплывающий префаб для добавления/редактирования
+    public void OpenAddProductPopup(ProductItem productToEdit, string textForTopLable)
     {
         GameObject popupGO = Instantiate(addProductPopupPrefab, transform.parent);
         var popup = popupGO.GetComponent<AddProductPopup>();
-        popup.Initialize(this, productToEdit, errorNotification);
+        popup.Initialize(this, productToEdit, errorNotification, textForTopLable);
     }
 
+    // Обновляем список (после добавления, удаления, редактирования)
     public void RefreshList()
     {
         LoadProducts();
     }
 
+    // Удаление товара из БД по ID
     public void DeleteProduct(int id)
     {
         var conn = DatabaseManager.Instance.GetConnection();
@@ -105,4 +136,14 @@ public class ProductsController : MonoBehaviour
         errorNotification.UpdateUI();
         errorNotification.Open();
     }
+
+    // ВАЖНО:
+    // Если вы хотите насильно пересоздавать товары при смене роли в одной сессии (без перезагрузки сцены),
+    // можете написать метод вроде этого, который заново устанавливает role и перегружает список:
+    //
+    // public void OnRoleChanged(string newRole) {
+    //     role = newRole;
+    //     ClearProducts();
+    //     LoadProducts();
+    // }
 }

@@ -19,13 +19,13 @@ public class MainMenuController : MonoBehaviour
         string role = DatabaseManager.Instance.GetRole();
         Debug.Log("Текущая роль: " + role);
 
-        string roleNameRus = "Неизвестно";
-        if (role == "store_admin") roleNameRus = "Администратор";
-        else if (role == "store_manager") roleNameRus = "Менеджер";
-        else if (role == "store_seller") roleNameRus = "Продавец";
-        else if (role == "store_moderator") roleNameRus = "Модератор";
+        string roleNameRus = "неизвестно";
+        if (role == "store_admin") roleNameRus = "администратор";
+        else if (role == "store_manager") roleNameRus = "менеджер";
+        else if (role == "store_seller") roleNameRus = "продавец";
+        else if (role == "store_moderator") roleNameRus = "модератор";
 
-        roleText.text = "Вы вошли как: " + roleNameRus;
+       //roleText.text = "Ваш уровень доступа: " + roleNameRus;
 
         // Сначала отключаем все кнопки
         productsButton.SetActive(false);

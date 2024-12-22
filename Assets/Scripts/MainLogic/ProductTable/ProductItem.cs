@@ -8,18 +8,22 @@ public class ProductItem : MonoBehaviour
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI priceText;
     [SerializeField] private TextMeshProUGUI quantityText;
-    [SerializeField] private ButtonManager editButton;   // Есть только в AdminPrefab
-    [SerializeField] private ButtonManager deleteButton; // Есть только в AdminPrefab
+    [SerializeField] private TextMeshProUGUI manufacturerNameHeader;
+    [SerializeField] private TextMeshProUGUI manufacturerDateHeader;
+    [SerializeField] private ButtonManager editButton;   // Только у AdminPrefab
+    [SerializeField] private ButtonManager deleteButton; // Только у AdminPrefab
 
     public int id;
     public string productName;
     public decimal productPrice;
     public int productQuantity;
-
+    public string manufacturerName;
+    public string manufactureDate;
     private ProductsController parentController;
     private NotificationManager errorNotification;
 
-    public void Init(int id, string name, decimal price, int quantity, ProductsController controller, NotificationManager errorNotif)
+    // Инициализация данных
+    public void Init(int id, string name, string manufactorName, decimal price, int quantity, string date, ProductsController controller, NotificationManager errorNotif)
     {
         this.id = id;
         productName = name;
@@ -27,20 +31,24 @@ public class ProductItem : MonoBehaviour
         productQuantity = quantity;
         parentController = controller;
         errorNotification = errorNotif;
-
-        nameText.text = name;
-        priceText.text = price.ToString("F2");
-        quantityText.text = quantity.ToString();
+        manufactureDate = date;
+        manufacturerName = manufactorName;
+        manufacturerNameHeader.text = manufacturerName;
+        manufacturerDateHeader.text = manufactureDate;
+        nameText.text = productName;
+        priceText.text = productPrice.ToString("F2");
+        quantityText.text = productQuantity.ToString();
     }
 
+    // Нажатие "Редактировать"
     public void OnEditClick()
     {
-        parentController.OpenAddProductPopup(this);
+        parentController.OpenAddProductPopup(this, "Редактирование товара");
     }
 
+    // Нажатие "Удалить"
     public void OnDeleteClick()
     {
-        // Удаляем товар
-        parentController.DeleteProduct(id);
+        parentController.ShowDeleteConfirmation(this);
     }
 }
