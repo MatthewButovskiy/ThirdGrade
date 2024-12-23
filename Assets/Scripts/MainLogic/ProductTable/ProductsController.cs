@@ -26,13 +26,17 @@ public class ProductsController : MonoBehaviour
         // Если роль - админ или менеджер, показываем кнопку "Добавить товар"
         bool canAdd = (role == "store_admin" || role == "store_manager");
         addProductButton.gameObject.SetActive(canAdd);
-        deleteConfirmationPanel.Initialize(this);
         LoadProducts();
     }
-    public void ShowDeleteConfirmation(ProductItem item)
+    public void ShowDeleteConfirmation(ProductItem product)
     {
-        deleteConfirmationPanel.ShowForItem(item);
+        DeleteConfirmation deletePanelGO = Instantiate(deleteConfirmationPanel, transform.parent);
+        var deletePanel = deletePanelGO.GetComponent<DeleteConfirmation>();
+
+        // Передаем логику удаления продукта
+        deletePanel.Initialize(() => DeleteProduct(product.id));
     }
+
 
     public void ShowSuccess(string msg)
     {
@@ -48,7 +52,7 @@ public class ProductsController : MonoBehaviour
 
         var conn = DatabaseManager.Instance.GetConnection();
         // Пример: если есть поле description, вы можете тоже его вытащить
-        using (var cmd = new NpgsqlCommand("SELECT id, name, price, quantity, manufacturer_name,  manufacture_date FROM techstore.products ORDER BY id", conn))
+        using (var cmd = new NpgsqlCommand("SELECT id, name, price, quantity, manufacturer_name,  manufacture_date, category_id FROM techstore.products ORDER BY id", conn))
         using (var reader = cmd.ExecuteReader())
         {
             while (reader.Read())
@@ -59,7 +63,8 @@ public class ProductsController : MonoBehaviour
                 int quantity = reader.GetInt32(3);
                 string manufactorName = reader.GetString(4);
                 DateTime manufactorDate = reader.GetDateTime(5);
-                Debug.Log(manufactorDate + " ");
+                int categoryID = reader.GetInt32(6);
+                
                 GameObject prefabToUse;
                 if (role == "store_admin" || role == "store_manager")
                 {
@@ -75,7 +80,7 @@ public class ProductsController : MonoBehaviour
                 currentItems.Add(itemGO);
 
                 var productItem = itemGO.GetComponent<ProductItem>();
-                productItem.Init(id, name, manufactorName, price, quantity, manufactorDate.ToString("yyyy-MM-dd"),this, errorNotification);
+                productItem.Init(id, name, manufactorName, price, quantity,categoryID, manufactorDate.ToString("yyyy-MM-dd"),this, errorNotification);
             }
         }
     }
@@ -101,7 +106,7 @@ public class ProductsController : MonoBehaviour
     {
         GameObject popupGO = Instantiate(addProductPopupPrefab, transform.parent);
         var popup = popupGO.GetComponent<AddProductPopup>();
-        popup.Initialize(this, productToEdit, errorNotification, textForTopLable);
+        popup.Initialize(this, productToEdit, textForTopLable);
     }
 
     // Обновляем список (после добавления, удаления, редактирования)

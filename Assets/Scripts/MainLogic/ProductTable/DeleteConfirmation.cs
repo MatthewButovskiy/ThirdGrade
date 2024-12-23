@@ -1,30 +1,29 @@
 using UnityEngine;
+using System;
 
 public class DeleteConfirmation : MonoBehaviour
 {
-    private ProductsController parentController;
-    private ProductItem productToDelete;
+    private Action onConfirmAction;
+    private Action onCancelAction;
 
-    public void Initialize(ProductsController controller)
+    // Инициализация подтверждения
+    public void Initialize(Action confirmAction, Action cancelAction = null)
     {
-        parentController = controller;
+        onConfirmAction = confirmAction;
+        onCancelAction = cancelAction;
     }
 
-    public void ShowForItem(ProductItem item)
-    {
-        productToDelete = item;
-        gameObject.SetActive(true);
-    }
-
+    // При подтверждении
     public void OnConfirmClick()
     {
-        parentController.DeleteProduct(productToDelete.id);
-        parentController.ShowSuccess("Товар успешно удалён!");
+        onConfirmAction?.Invoke();
         gameObject.SetActive(false);
     }
 
+    // При отмене
     public void OnCancelClick()
     {
+        onCancelAction?.Invoke();
         gameObject.SetActive(false);
     }
 }

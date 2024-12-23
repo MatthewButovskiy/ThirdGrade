@@ -22,10 +22,9 @@ public class AddProductPopup : MonoBehaviour
     private ProductItem editingProduct;
     private bool isEditMode = false;
 
-    public void Initialize(ProductsController controller, ProductItem productToEdit, NotificationManager errorNotif, string topNameField)
+    public void Initialize(ProductsController controller, ProductItem productToEdit, string topNameField)
     {
         parentController = controller;
-        errorNotification = errorNotif;
         topName.text = topNameField;
         if (productToEdit != null)
         {

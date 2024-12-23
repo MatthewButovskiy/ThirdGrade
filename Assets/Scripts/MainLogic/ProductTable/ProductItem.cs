@@ -10,6 +10,7 @@ public class ProductItem : MonoBehaviour
     [SerializeField] private TextMeshProUGUI quantityText;
     [SerializeField] private TextMeshProUGUI manufacturerNameHeader;
     [SerializeField] private TextMeshProUGUI manufacturerDateHeader;
+    [SerializeField] private TextMeshProUGUI IDcategory;
     [SerializeField] private ButtonManager editButton;   // Только у AdminPrefab
     [SerializeField] private ButtonManager deleteButton; // Только у AdminPrefab
 
@@ -17,22 +18,25 @@ public class ProductItem : MonoBehaviour
     public string productName;
     public decimal productPrice;
     public int productQuantity;
+    public int productCategoryID;
     public string manufacturerName;
     public string manufactureDate;
     private ProductsController parentController;
     private NotificationManager errorNotification;
 
     // Инициализация данных
-    public void Init(int id, string name, string manufactorName, decimal price, int quantity, string date, ProductsController controller, NotificationManager errorNotif)
+    public void Init(int id, string name, string manufactorName, decimal price, int quantity, int categoryID, string date, ProductsController controller, NotificationManager errorNotif)
     {
         this.id = id;
         productName = name;
         productPrice = price;
         productQuantity = quantity;
+        productCategoryID = categoryID;
         parentController = controller;
         errorNotification = errorNotif;
         manufactureDate = date;
         manufacturerName = manufactorName;
+        IDcategory.text = productCategoryID.ToString();
         manufacturerNameHeader.text = manufacturerName;
         manufacturerDateHeader.text = manufactureDate;
         nameText.text = productName;
