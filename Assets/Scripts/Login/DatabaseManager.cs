@@ -67,4 +67,9 @@ public class DatabaseManager : MonoBehaviour
     {
         return connection;
     }
+    public string GetConnectionString()
+    {
+        return connectionString;
+    }
+
 }

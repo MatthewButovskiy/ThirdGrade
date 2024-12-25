@@ -10,12 +10,11 @@ public class AddProductPopup : MonoBehaviour
     [SerializeField] private TMP_InputField nameField;
     [SerializeField] private TMP_Text topName;
     [SerializeField] private TMP_InputField manufacturerNameField;
-    [SerializeField] private TMP_InputField manufactureDateField;  // строка вида "2023-08-15"
+    [SerializeField] private TMP_InputField manufactureDateField;
     [SerializeField] private TMP_InputField priceField;
     [SerializeField] private TMP_InputField quantityField;
     [SerializeField] private TMP_InputField categoryIdField;
     [SerializeField] private TMP_InputField manufacturerIdField;
-    // warrantyField, discountIdField, parameterIdField, etc., если нужно
     [SerializeField] private NotificationManager errorNotification;
 
     private ProductsController parentController;
@@ -34,19 +33,18 @@ public class AddProductPopup : MonoBehaviour
             manufacturerNameField.text = editingProduct.manufacturerName;
             if (editingProduct.manufactureDate.Equals(String.Empty))
                 manufactureDateField.text =
-                    "2023-08-15"; // или editingProduct.manufactureDate.ToString("yyyy-MM-dd") если храните
+                    "2023-08-15"; 
             else
                 manufactureDateField.text = editingProduct.manufactureDate;
             priceField.text = editingProduct.productPrice.ToString("F2");
             quantityField.text = editingProduct.productQuantity.ToString();
-            categoryIdField.text = "1"; // при редактировании — выводим реальное значение
+            categoryIdField.text = "1";
             manufacturerIdField.text = "1";
         }
         else
         {
             isEditMode = false;
             editingProduct = null;
-            // поля пустые для добавления
             nameField.text = "";
             manufacturerNameField.text = "";
             manufactureDateField.text = "2023-08-15";
@@ -104,8 +102,7 @@ public class AddProductPopup : MonoBehaviour
             ShowError("Неверный ID производителя.");
             return;
         }
-
-        // Вычисляем total_amount = price * quantity
+        
         decimal totalAmt = newPrice * newQty;
 
         var conn = DatabaseManager.Instance.GetConnection();
@@ -166,6 +163,7 @@ public class AddProductPopup : MonoBehaviour
 
     private void ShowError(string message)
     {
+        errorNotification.title = "Ошибка";
         errorNotification.description = message;
         errorNotification.UpdateUI();
         errorNotification.Open();

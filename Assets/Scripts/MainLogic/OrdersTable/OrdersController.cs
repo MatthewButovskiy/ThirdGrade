@@ -7,12 +7,13 @@ using Michsky.MUIP;
 public class OrdersController : MonoBehaviour
 {
     [SerializeField] private Transform content; 
-    [SerializeField] private GameObject orderItemAdminPrefab;   // Префаб с кнопками редакт/удал.
-    [SerializeField] private GameObject orderItemReadOnlyPrefab; // Префаб read-only
-    [SerializeField] private ButtonManager addOrderButton;      // Кнопка "Добавить заказ"
-    [SerializeField] private GameObject addOrderPopupPrefab;    // Всплывающее окно
+    [SerializeField] private GameObject orderItemAdminPrefab;   
+    [SerializeField] private GameObject orderItemReadOnlyPrefab;
+    [SerializeField] private ButtonManager addOrderButton;      
+    [SerializeField] private GameObject addOrderPopupPrefab;    
     [SerializeField] private NotificationManager errorNotification;
-    [SerializeField] private DeleteConfirmation deleteConfirmationPanelPrefab; // Окно "вы точно хотите удалить?"
+    [SerializeField] private DeleteConfirmation deleteConfirmationPanelPrefab;
+    [SerializeField] private DatabaseManager dbManager;
 
     private string role;
     private List<GameObject> currentItems = new List<GameObject>();
@@ -20,9 +21,6 @@ public class OrdersController : MonoBehaviour
     public void StartWork()
     {
         role = DatabaseManager.Instance.GetRole();
-
-        // Определяем, кто может добавлять/редактировать заказы.
-        // Допустим: admin, manager, seller могут добавлять. Moderator - только read-only (без добавления).
         bool canAdd = (role == "store_admin" || role == "store_manager" || role == "store_seller");
         addOrderButton.gameObject.SetActive(canAdd);
 
@@ -32,8 +30,8 @@ public class OrdersController : MonoBehaviour
     private void LoadOrders()
     {
         ClearOrders();
-
         var conn = DatabaseManager.Instance.GetConnection();
+
         using (var cmd = new NpgsqlCommand(
             @"SELECT id, order_date, customer_address, 
                      customer_last_name, customer_first_name, customer_patronymic
@@ -44,15 +42,13 @@ public class OrdersController : MonoBehaviour
             while (reader.Read())
             {
                 int id = reader.GetInt32(0);
-                System.DateTime orderDate = reader.GetDateTime(1);
+                System.DateTime oDate = reader.GetDateTime(1);
                 string address = reader.GetString(2);
                 string lastName = reader.GetString(3);
                 string firstName = reader.GetString(4);
                 string patronymic = reader.IsDBNull(5) ? "" : reader.GetString(5);
 
-                // Выбираем нужный префаб
                 GameObject prefabToUse;
-                // admin, manager, seller -> adminPrefab
                 if (role == "store_admin" || role == "store_manager" || role == "store_seller")
                     prefabToUse = orderItemAdminPrefab;
                 else
@@ -62,8 +58,7 @@ public class OrdersController : MonoBehaviour
                 currentItems.Add(itemGO);
 
                 var orderItem = itemGO.GetComponent<OrderItem>();
-                // Инициализируем
-                orderItem.Init(id, orderDate, address, lastName, firstName, patronymic, this, errorNotification);
+                orderItem.Init(id, oDate, address, lastName, firstName, patronymic, this, errorNotification, dbManager);
             }
         }
     }
@@ -82,7 +77,6 @@ public class OrdersController : MonoBehaviour
         OpenAddOrderPopup(null, "Добавление заказа");
     }
 
-    // Открытие всплывающего окна для добавления или редактирования
     public void OpenAddOrderPopup(OrderItem orderToEdit, string popupTitle)
     {
         var popupGO = Instantiate(addOrderPopupPrefab, transform.parent);
@@ -101,7 +95,6 @@ public class OrdersController : MonoBehaviour
         delConfirm.Initialize(() => DeleteOrder(orderItem.id));
     }
 
-    // Удаление заказа
     public void DeleteOrder(int orderId)
     {
         var conn = DatabaseManager.Instance.GetConnection();

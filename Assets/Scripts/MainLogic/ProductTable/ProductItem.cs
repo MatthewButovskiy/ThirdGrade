@@ -11,8 +11,8 @@ public class ProductItem : MonoBehaviour
     [SerializeField] private TextMeshProUGUI manufacturerNameHeader;
     [SerializeField] private TextMeshProUGUI manufacturerDateHeader;
     [SerializeField] private TextMeshProUGUI IDcategory;
-    [SerializeField] private ButtonManager editButton;   // Только у AdminPrefab
-    [SerializeField] private ButtonManager deleteButton; // Только у AdminPrefab
+    [SerializeField] private ButtonManager editButton; 
+    [SerializeField] private ButtonManager deleteButton;
 
     public int id;
     public string productName;
@@ -23,8 +23,7 @@ public class ProductItem : MonoBehaviour
     public string manufactureDate;
     private ProductsController parentController;
     private NotificationManager errorNotification;
-
-    // Инициализация данных
+    
     public void Init(int id, string name, string manufactorName, decimal price, int quantity, int categoryID, string date, ProductsController controller, NotificationManager errorNotif)
     {
         this.id = id;
@@ -43,14 +42,12 @@ public class ProductItem : MonoBehaviour
         priceText.text = productPrice.ToString("F2");
         quantityText.text = productQuantity.ToString();
     }
-
-    // Нажатие "Редактировать"
+    
     public void OnEditClick()
     {
         parentController.OpenAddProductPopup(this, "Редактирование товара");
     }
-
-    // Нажатие "Удалить"
+    
     public void OnDeleteClick()
     {
         parentController.ShowDeleteConfirmation(this);

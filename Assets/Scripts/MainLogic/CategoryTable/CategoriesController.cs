@@ -9,7 +9,7 @@ public class CategoriesController : MonoBehaviour
     [SerializeField] private Transform content;
     [SerializeField] private GameObject categoryItemPrefab;
     [SerializeField] private NotificationManager errorNotification;
-    [SerializeField] private GameObject deleteConfirmationPanelPrefab; // Панель подтверждения удаления
+    [SerializeField] private GameObject deleteConfirmationPanelPrefab; 
    
     [SerializeField] private GameObject addCategoryPopupPrefab;
     private List<GameObject> currentItems = new List<GameObject>();

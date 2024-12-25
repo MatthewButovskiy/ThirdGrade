@@ -16,7 +16,7 @@ public class AddCategoryPopup : MonoBehaviour
     public void Initialize(CategoriesController controller, CategoryItem categoryToEdit, NotificationManager errorNotif, string popupTitle)
     {
         parentController = controller;
-        errorNotification = errorNotif;
+        //errorNotification = errorNotif;
         if (categoryToEdit != null)
         {
             isEditMode = true;
@@ -80,6 +80,7 @@ public class AddCategoryPopup : MonoBehaviour
 
     private void ShowError(string message)
     {
+        errorNotification.title = "Ошибка";
         errorNotification.description = message;
         errorNotification.UpdateUI();
         errorNotification.Open();

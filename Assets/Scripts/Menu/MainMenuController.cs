@@ -26,8 +26,7 @@ public class MainMenuController : MonoBehaviour
         else if (role == "store_moderator") roleNameRus = "модератор";
 
        //roleText.text = "Ваш уровень доступа: " + roleNameRus;
-
-        // Сначала отключаем все кнопки
+       
         productsButton.SetActive(false);
         categoriesButton.SetActive(false);
         ordersButton.SetActive(false);
@@ -35,14 +34,13 @@ public class MainMenuController : MonoBehaviour
         discountsButton.SetActive(false);
         reviewsButton.SetActive(false);
         logsButton.SetActive(false);
-
-        // Включаем в зависимости от роли
+        
         if (role == "store_admin")
         {
             productsButton.SetActive(true);
             categoriesButton.SetActive(true);
             ordersButton.SetActive(true);
-            warehouseButton.SetActive(true);
+            warehouseButton.SetActive(false);
             discountsButton.SetActive(true);
             reviewsButton.SetActive(true);
             logsButton.SetActive(true);
@@ -52,7 +50,7 @@ public class MainMenuController : MonoBehaviour
             productsButton.SetActive(true);
             categoriesButton.SetActive(true);
             ordersButton.SetActive(true);
-            warehouseButton.SetActive(true);
+            warehouseButton.SetActive(false);
             discountsButton.SetActive(true);
         }
         else if (role == "store_seller")
@@ -62,7 +60,7 @@ public class MainMenuController : MonoBehaviour
         }
         else if (role == "store_moderator")
         {
-            productsButton.SetActive(true); // read-only
+            productsButton.SetActive(true);
             reviewsButton.SetActive(true);
         }
     }
@@ -71,7 +69,4 @@ public class MainMenuController : MonoBehaviour
     {
         DatabaseManager.Instance.CloseConnection();
     }
-
-    // Далее вы можете создать методы OnProductsClick(), OnCategoriesClick() и т.д.
-    // При нажатии на конкретную кнопку можно открывать соответствующую сцену или панель.
 }
